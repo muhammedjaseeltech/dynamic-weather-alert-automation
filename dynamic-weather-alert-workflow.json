@@ -1,0 +1,368 @@
+{
+  "name": "Dynamic Weather Alert - GitHub Clean",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Weather Checker",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Enter City",
+              "fieldName": "city"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        672,
+        0
+      ],
+      "id": "553c076e-2073-4a84-84b3-a1b65c2ae69e",
+      "name": "Weather Form Input",
+      "webhookId": "4478cc1b-8669-442e-9273-21ef88c7b854"
+    },
+    {
+      "parameters": {
+        "url": "https://api.weatherapi.com/v1/current.json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "YOUR_WEATHERAPI_KEY"
+            },
+            {
+              "name": "q",
+              "value": "={{ $json.city }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        0
+      ],
+      "id": "0e3ca41d-e14e-4396-bfc9-65a4f8ece3b1",
+      "name": "Fetch Weather Data",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1fb26f47-9803-43af-9da9-805dbb16919a",
+              "name": "City",
+              "value": "={{ $json.location.name }}",
+              "type": "string"
+            },
+            {
+              "id": "aa68515c-39d8-483c-8465-6d0f7dbf38db",
+              "name": "Temperature",
+              "value": "={{ $json.current.temp_c }}",
+              "type": "string"
+            },
+            {
+              "id": "4e3c54ba-a86d-4e4c-a342-23531e98fec0",
+              "name": "Condition",
+              "value": "={{ $json.current.condition.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        816,
+        176
+      ],
+      "id": "81f11b45-3cf2-4061-81e3-40603d2743cd",
+      "name": "Extract Weather Details"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1fb335a1-a175-485f-ab6a-8eeeda4b07df",
+              "name": "=Weather Message",
+              "value": "=Weather in {{ $json.City }}:{{ $json.Temperature }}℃,{{ $json.Condition }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1040,
+        176
+      ],
+      "id": "62ffefff-87b7-4e63-a7a2-772acb878eda",
+      "name": "Build Telegram Message"
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "={{ $json[\"Weather Message\"] }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1264,
+        176
+      ],
+      "id": "e384ddd2-86cc-4da0-b047-ba34b111a122",
+      "name": "Send Weather Alert",
+      "webhookId": "ac2fd510-02a9-44d0-b4fb-d28b053693e2",
+      "credentials": {
+        "telegramApi": {
+          "id": "xH5uWVd8EH4rzpUL",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4b5c8407-8b9a-440b-906f-29bccd20065b",
+              "leftValue": "={{ $json.city }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1024,
+        0
+      ],
+      "id": "e07474d3-55b8-4717-98b2-6bdbe4470b6b",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1a52151c-b5be-472d-ac97-439b25c4205b",
+              "name": "message",
+              "value": "Please enter a valid city",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1264,
+        16
+      ],
+      "id": "52339dd5-d6fd-4b62-941c-27cd0e859946",
+      "name": "Build Invalid Input Message"
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "={{ $json.message }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1488,
+        16
+      ],
+      "id": "e7820bc5-96eb-4383-8dae-0e570f88e2a7",
+      "name": "Send Invalid Input Alert",
+      "webhookId": "280a841f-8eb8-4c79-b73b-965776aba930",
+      "credentials": {
+        "telegramApi": {
+          "id": "xH5uWVd8EH4rzpUL",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f306114d-c22b-4008-9064-a779e3781ece",
+              "name": "message",
+              "value": "City not found. Please enter a valid city.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        816,
+        336
+      ],
+      "id": "d30443ae-f36c-4963-8f64-f6a09195d103",
+      "name": "Build API Error Message"
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "={{ $json.message }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1040,
+        336
+      ],
+      "id": "ce7c9b66-4d78-4c04-8e15-81c61e6e5688",
+      "name": "Send API Error Alert",
+      "webhookId": "2e42a121-e358-45ca-a95c-c0f41c271f2c",
+      "credentials": {
+        "telegramApi": {
+          "id": "xH5uWVd8EH4rzpUL",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Weather Form Input": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Weather Data": {
+      "main": [
+        [
+          {
+            "node": "Extract Weather Details",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build API Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Weather Details": {
+      "main": [
+        [
+          {
+            "node": "Build Telegram Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Telegram Message": {
+      "main": [
+        [
+          {
+            "node": "Send Weather Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Fetch Weather Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Invalid Input Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Invalid Input Message": {
+      "main": [
+        [
+          {
+            "node": "Send Invalid Input Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build API Error Message": {
+      "main": [
+        [
+          {
+            "node": "Send API Error Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "52e68854-0560-4b59-8fe9-6ee6104ecd99",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8620f184222f374ce9cb8b78372889ca174464e627f8c53f5459a7467b7ff1cb"
+  },
+  "nodeGroups": [],
+  "id": "KgB3jWqS4SaEdddt",
+  "tags": []
+}
